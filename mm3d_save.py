@@ -20,6 +20,11 @@ import struct
 from dataclasses import dataclass, field
 from pathlib import Path
 
+try:
+    from .guide import STEPS
+except ImportError:
+    from guide import STEPS
+
 SAVE_SIZE = 0x13618
 MAGIC = b"MJR"
 
@@ -66,6 +71,10 @@ class Piece:
     flags: tuple[Flag, ...]          # any one set => collected
     inferable: bool = False          # flag doesn't survive a cycle reset in MM3D
 
+    @property
+    def steps(self) -> tuple[str, ...]:
+        return STEPS.get(self.id, ())
+
 
 REGIONS = [
     "Clock Town",
@@ -84,7 +93,7 @@ PIECES: list[Piece] = [
     Piece("town_gallery", "Clock Town", "Town Shooting Gallery",
           "Get a perfect score at the East Clock Town gallery.", (("we", 32, 0x04),)),
     Piece("honey_darling", "Clock Town", "Honey & Darling",
-          "Win their game on all three days in one cycle.", (("we", 22, 0x80),)),
+          "Win their East Clock Town game on all three days in one cycle.", (("we", 22, 0x80),)),
     Piece("chest_game", "Clock Town", "Treasure Chest Shop",
           "Win the Treasure Chest game as Goron Link.", (("chest", 0x17, 1),)),
     Piece("postbox", "Clock Town", "Postbox",
@@ -100,7 +109,7 @@ PIECES: list[Piece] = [
           "On a high ledge in South Clock Town, reached with a Deku Flower.",
           (("coll", 0x6F, 10),)),
     Piece("bank", "Clock Town", "Bank Reward",
-          "Keep depositing rupees at the West Clock Town bank; the heart piece is the top reward.",
+          "Get your bank balance to 5,000 rupees (in MM3D the bank is in South Clock Town).",
           (("we", 59, 0x08),)),
     Piece("postman_game", "Clock Town", "Postman's Counting Game",
           "Stop his timer at exactly 10 seconds (the Bunny Hood helps).", (("we", 77, 0x01),)),
@@ -181,7 +190,7 @@ PIECES: list[Piece] = [
     Piece("zora_cape", "Great Bay", "Zora Cape Like Like",
           "Defeat the underwater Like Like at Zora Cape.", (("coll", 0x38, 7),)),
     Piece("evan", "Great Bay", "Evan's Composition",
-          "Play the New Wave Bossa Nova for Evan in Zora Hall.", (("we", 39, 0x20),)),
+          "Learn the song in Mikau's diary and play it for Evan in Zora Hall.", (("we", 39, 0x20),)),
     Piece("zora_scrub", "Great Bay", "Zora Hall Ledge (Scrub)",
           "Give the Mountain Title Deed to the Zora Hall Business Scrub, then fly up.",
           (("coll", 0x4C, 30),)),
@@ -219,6 +228,7 @@ PIECES: list[Piece] = [
 ]
 
 assert len(PIECES) == TOTAL_PIECES, len(PIECES)
+assert set(STEPS) == {p.id for p in PIECES}, set(STEPS) ^ {p.id for p in PIECES}
 
 
 class SaveError(ValueError):

@@ -13,6 +13,7 @@ or `./install.sh` once to add it to your app launcher (and `mm3d-heart-tracker` 
 - **Open** (Ctrl+O) a `save0.bin` / `save1.bin` / `save2.bin`, or drop one on the window.
   Slot files dumped with Checkpoint/JKSM or taken from Citra/Azahar/Lime3DS both work.
 - If the other slots sit in the same folder, they show up as tabs.
+- Click a piece to expand step-by-step instructions for getting it (written for the 3DS version).
 - **All / Missing** filters the list.
 - The window reloads by itself when the save file changes, so you can keep it open
   next to an emulator. Ctrl+R reloads by hand.

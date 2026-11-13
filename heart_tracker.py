@@ -28,6 +28,8 @@ CSS = """
 .piece-icon.maybe { background: alpha(@warning_color, .18); color: @warning_color; }
 .piece-icon.missing { background: alpha(@window_fg_color, .07); color: alpha(@window_fg_color, .35); }
 row.got-row .title { opacity: .6; }
+.step-num { border-radius: 999px; min-width: 22px; min-height: 22px; font-size: 12px;
+            font-weight: 700; background: alpha(@accent_bg_color, .2); color: @accent_color; }
 .region-chip { border-radius: 999px; padding: 2px 10px; font-size: 12px; font-weight: 600;
                background: alpha(@window_fg_color, .07); }
 .region-chip.done { background: alpha(@success_color, .18); color: @success_color; }
@@ -404,9 +406,22 @@ class TrackerWindow(Adw.ApplicationWindow):
 
     @staticmethod
     def _piece_row(p: mm.Piece, status: str | None) -> Gtk.Widget:
-        row = Adw.ActionRow(title=GLib.markup_escape_text(p.name),
-                            subtitle=GLib.markup_escape_text(p.hint))
+        row = Adw.ExpanderRow(title=GLib.markup_escape_text(p.name),
+                              subtitle=GLib.markup_escape_text(p.hint))
         row.set_subtitle_lines(2)
+
+        steps = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8,
+                        margin_top=12, margin_bottom=14, margin_start=16, margin_end=16)
+        for i, text in enumerate(p.steps, 1):
+            line = Gtk.Box(spacing=10)
+            num = Gtk.Label(label=str(i), valign=Gtk.Align.START, width_chars=2)
+            num.add_css_class("step-num")
+            body = Gtk.Label(label=text, wrap=True, xalign=0, hexpand=True, selectable=True)
+            body.set_wrap_mode(2)  # Pango.WrapMode.WORD_CHAR
+            line.append(num)
+            line.append(body)
+            steps.append(line)
+        row.add_row(steps)
         icon_name, cls, tip = {
             "yes": ("object-select-symbolic", "got", "Collected"),
             "inferred": ("dialog-question-symbolic", "maybe",
