@@ -32,6 +32,7 @@ CSS = """
             background: alpha(@accent_bg_color, .18); color: @accent_color; }
 .cat-icon.done { background: alpha(@success_color, .18); color: @success_color; }
 row.got-row .title { opacity: .6; }
+image.not-owned { opacity: .25; filter: grayscale(1); }
 .region-chip { border-radius: 999px; padding: 2px 10px; font-size: 12px; font-weight: 600;
                background: alpha(@window_fg_color, .07); }
 .region-chip.done { background: alpha(@success_color, .18); color: @success_color; }
@@ -145,6 +146,34 @@ def chip(text: str, done: bool) -> Gtk.Label:
     if done:
         lbl.add_css_class("done")
     return lbl
+
+
+# Optional icons you supply yourself (none ship with the app). A file named after the
+# check id without its prefix, e.g. "deku.png" for m_deku, "allnight.png" for m_allnight.
+ICON_DIRS = (
+    Path(__file__).resolve().parent / "icons",
+    Path(GLib.get_user_data_dir()) / "mm3d-heart-tracker" / "icons",
+)
+ICON_EXTS = (".png", ".svg", ".webp", ".jpg", ".jpeg")
+_icon_cache: dict[str, Path | None] = {}
+
+
+def find_icon(check_id: str) -> Path | None:
+    if check_id not in _icon_cache:
+        stem = check_id.split("_", 1)[-1]
+        _icon_cache[check_id] = next(
+            (d / f"{stem}{ext}" for d in ICON_DIRS for ext in ICON_EXTS if (d / f"{stem}{ext}").is_file()),
+            None)
+    return _icon_cache[check_id]
+
+
+def item_picture(path: Path, owned: bool, size: int) -> Gtk.Widget:
+    pic = Gtk.Image.new_from_file(str(path))
+    pic.set_pixel_size(size)
+    pic.set_valign(Gtk.Align.CENTER)
+    if not owned:
+        pic.add_css_class("not-owned")
+    return pic
 
 
 INFERRED_TIP = ("Probably done. MM3D clears this flag on each new cycle, so it's worked out "
@@ -452,6 +481,9 @@ class TrackerWindow(Adw.ApplicationWindow):
             done = sum(1 for _c, ok, _d in rows if ok)
             group = Adw.PreferencesGroup(title=GLib.markup_escape_text(cat.title))
             group.set_header_suffix(chip(f"{done} / {len(rows)}", done == len(rows)))
+            grid = self._icon_grid(rows)
+            if grid:
+                page.append(grid)
             shown = 0
             for check, ok, detail in rows:
                 if self.filter_mode == "missing" and ok:
@@ -471,9 +503,32 @@ class TrackerWindow(Adw.ApplicationWindow):
         row = Adw.ActionRow(title=GLib.markup_escape_text(check.name), subtitle=GLib.markup_escape_text(sub))
         row.set_subtitle_lines(3)
         row.add_prefix(status_icon("yes" if ok else None))
+        icon = find_icon(check.id)
+        if icon:
+            row.add_prefix(item_picture(icon, ok, 36))
         if ok:
             row.add_css_class("got-row")
         return row
+
+    @staticmethod
+    def _icon_grid(rows) -> Gtk.Widget | None:
+        """All the category's icons at a glance: owned ones bright, missing ones faded."""
+        with_icons = [(c, ok, find_icon(c.id)) for c, ok, _d in rows]
+        if not any(p for _c, _ok, p in with_icons):
+            return None
+        grid = Gtk.FlowBox(selection_mode=Gtk.SelectionMode.NONE, homogeneous=True,
+                           min_children_per_line=4, max_children_per_line=8,
+                           column_spacing=6, row_spacing=6)
+        grid.add_css_class("card")
+        grid.set_margin_bottom(4)
+        for check, ok, path in with_icons:
+            cell = (item_picture(path, ok, 48) if path else
+                    Gtk.Image(icon_name="image-missing-symbolic", pixel_size=24, opacity=0.3))
+            cell.set_tooltip_text(f"{check.name} — {'got it' if ok else 'missing'}")
+            cell.set_margin_top(8)
+            cell.set_margin_bottom(8)
+            grid.append(cell)
+        return grid
 
     def _fill_hearts(self, page: Gtk.Box, r: mm.SlotResult) -> int:
         if r.unexplained > 0:

@@ -34,6 +34,22 @@ or `./install.sh` once to add it to your app launcher (and `mm3d-heart-tracker` 
 
 Needs only Python 3 with PyGObject, GTK 4 and libadwaita ≥ 1.7. It reads the save and never writes to it.
 
+## Mask icons (optional, bring your own)
+
+No game artwork ships with this app. If you have your own mask icons, put them in either
+`icons/` next to `heart_tracker.py` (git ignores this folder) or
+`~/.local/share/mm3d-heart-tracker/icons/`. The Masks page then shows a grid of all 24,
+with the ones you're missing faded, and each row gets its icon.
+
+Name each file after the mask (`.png`, `.svg`, `.webp` or `.jpg`):
+
+    deku  goron  zora  fierce  truth  kafei  allnight  bunny  keaton  garo  romani  troupe
+    postman  couple  greatfairy  gibdo  dongero  kamaro  captain  stone  bremen  blast  scents  giant
+
+For example `icons/deku.png` or `icons/allnight.png`. Any you don't provide just show without an icon.
+The same naming works for other checks too: drop the prefix from the check id in `checklist.py`
+(`i_hookshot` → `hookshot.png`).
+
 ## How it decides
 
 - Everything is read straight from the save: event flags, scene flags, the inventory,
