@@ -1,8 +1,20 @@
-# Heart Piece Tracker (Majora's Mask 3D)
+# MM3D 100% Tracker
 
-A small GTK4/libadwaita app that reads a Majora's Mask 3D save slot and shows
-which of the 52 Pieces of Heart you have and which you still need, grouped by region
-with a hint for each.
+A GTK4/libadwaita app for Linux that reads a Majora's Mask 3D save slot and shows
+how close you are to 100%. You get an overall completion percentage and a checklist per category:
+
+| Category | What's tracked |
+|---|---|
+| Pieces of Heart | All 52, by region, with step-by-step instructions for each |
+| Masks | All 24 |
+| Songs | The 10 songs |
+| Items | 15 inventory items and the Bombers' Notebook |
+| Bottles | All 7 (MM3D adds Gorman's Mystery Milk) |
+| Upgrades | Quivers, bomb bags, wallets, Razor/Gilded Sword, Mirror Shield |
+| Great Fairies | The 5 Great Fairy rewards, with this cycle's stray fairy count |
+| Spider Houses | Both rewards, with this cycle's Gold Skulltula count |
+| Bosses | 4 remains and 4 boss Heart Containers |
+| Owl Statues | All 10 |
 
 ## Run
 
@@ -13,8 +25,8 @@ or `./install.sh` once to add it to your app launcher (and `mm3d-heart-tracker` 
 - **Open** (Ctrl+O) a `save0.bin` / `save1.bin` / `save2.bin`, or drop one on the window.
   Slot files dumped with Checkpoint/JKSM or taken from Citra/Azahar/Lime3DS both work.
 - If the other slots sit in the same folder, they show up as tabs.
-- Click a piece to expand step-by-step instructions for getting it (written for the 3DS version).
-- **All / Missing** filters the list.
+- Tap a category to open its checklist. **All / Missing** filters it.
+- In Pieces of Heart, tap a piece to expand step-by-step instructions (written for the 3DS version).
 - The window reloads by itself when the save file changes, so you can keep it open
   next to an emulator. Ctrl+R reloads by hand.
 - It remembers the last file you opened. On first run it looks in emulator folders
@@ -24,15 +36,19 @@ Needs only Python 3 with PyGObject, GTK 4 and libadwaita ≥ 1.7. It reads the s
 
 ## How it decides
 
-- 51 pieces are read straight from the game's own flags (event flags, scene
-  collectible flags, chest flags).
+- Everything is read straight from the save: event flags, scene flags, the inventory,
+  mask and bottle slots, upgrade and quest bitfields, and owl statue flags.
 - **Stock Pot Inn toilet hand:** MM3D clears this flag on every Song of Time, so it
   can't be read from the save. The app works out how many pieces you have from your
   hearts (max hearts − 3 starting − boss containers, ×4, + pieces toward the next heart).
   If that's one more than the flags account for, the hand is marked **Inferred**.
 - MM3D swapped two rewards from the N64 version: Dampé's dig gives the heart piece and
-  Koume's boat archery gives a bottle. The list follows MM3D.
-- The two Termina Field grotto chests (Peahat and Dodongo) use flags that can't be
-  told apart, so they show as "#1" and "#2".
+  Koume's boat archery gives a bottle. The lists follow MM3D.
+- Stray fairy and Gold Skulltula counts reset every cycle, so those sections track the
+  permanent rewards. The counts are shown as progress.
+- The overall percentage counts each check once, even when it appears in two sections
+  (for example, the Mask of Truth is under both Masks and Spider Houses).
+- Not tracked: Bomber's Notebook entries and fishing.
 
 `mm3d_save.py` also works from the command line: `python3 mm3d_save.py save0.bin`.
+Piece instructions live in `guide.py`, and the other checklists in `checklist.py`.

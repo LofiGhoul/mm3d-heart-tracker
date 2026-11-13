@@ -21,8 +21,12 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 try:
+    from .checklist import CATEGORIES, Category, Check, SaveView
     from .guide import STEPS
 except ImportError:
+    import sys as _sys
+    _sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from checklist import CATEGORIES, Category, Check, SaveView
     from guide import STEPS
 
 SAVE_SIZE = 0x13618
@@ -245,6 +249,20 @@ class SlotResult:
     boss_containers: list[str]
     expected_total: int            # pieces collected, worked out from hearts
     collected: dict[str, str] = field(default_factory=dict)  # id -> "yes" | "inferred"
+    # other 100% categories: (category, [(check, done, detail text)])
+    categories: list[tuple[Category, list[tuple[Check, bool, str]]]] = field(default_factory=list)
+
+    @property
+    def overall(self) -> tuple[int, int]:
+        """(done, total) across heart pieces and every category, each check counted once."""
+        done = {f"hp_{k}" for k in self.collected}
+        total = {f"hp_{p.id}" for p in PIECES}
+        for _cat, rows in self.categories:
+            for check, ok, _ in rows:
+                total.add(check.id)
+                if ok:
+                    done.add(check.id)
+        return len(done), len(total)
 
     @property
     def detected(self) -> int:
@@ -304,6 +322,11 @@ def read_slot(path: str | Path) -> SlotResult:
         if p.inferable and p.id not in result.collected:
             result.collected[p.id] = "inferred"
             spare -= 1
+
+    view = SaveView(data)
+    for cat in CATEGORIES:
+        rows = [(c, bool(c.test(view)), c.detail(view) if c.detail else "") for c in cat.checks]
+        result.categories.append((cat, rows))
     return result
 
 
